@@ -1,9 +1,8 @@
 {
   "key": {
-    "label": "Key",
-    "placeholder": "Dothraki"
+    "label": "学校"
   },
   "rating": {
-    "label": "Rating"
+    "label": "等级"
   }
 }

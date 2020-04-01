@@ -1,21 +1,37 @@
-# specify the node base image with your desired version node:<version>
-FROM node:10
-# replace this with your application's default port
-EXPOSE 5000
-# Create app directory
+## build image
+FROM node:13.12.0-buster as build
+
+## set working directory
 WORKDIR /usr/src/app
-# Install app dependencies
-# A wildcard is used to ensure both package.json AND package-lock.json are copied
-# where available (npm@5+)
-COPY . ./
 
-RUN npm install
-RUN npm install -g serve
-RUN npm run-script build
-RUN npm run docs:build
-USER node
-# Production CMD
-CMD [ "serve", "-s", "build" ]
-# Comment out Production CMD and uncomment following for development
-#CMD [ "npm", "build" ]
+## add `/usr/src/app/node_modules/.bin` to $PATH
+ENV PATH /usr/src/app/node_modules/.bin:$PATH
 
+## install and cache app dependencies
+COPY package.json /usr/src/app/package.json
+
+## install app dependencies
+RUN npm install --silent
+
+## copy files
+COPY . /usr/src/app
+
+## build production app
+RUN npm run build
+
+## production environment
+FROM nginx:1.17.9-alpine
+
+## copy build artifacts to nginx
+COPY --from=build /usr/src/app/build /usr/share/nginx/html
+
+## copy custom nginx config
+RUN rm /etc/nginx/conf.d/default.conf
+COPY nginx/nginx.conf /etc/nginx/conf.d
+
+## export port 80
+EXPOSE 80
+
+
+## run nginx server
+CMD ["nginx", "-g", "daemon off;"]
